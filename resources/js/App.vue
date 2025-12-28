@@ -44,144 +44,12 @@
           :products="products"
           @add-to-cart="addToCart"
           @load-products="loadProducts"
+          @search="handleSearch"
         />
       </div>
     </div>
   </div>
 </template>
-
-<!-- <script>
-import { ref, computed, onMounted } from 'vue';
-import ProductList from './components/ProductList.vue';
-import CartView from './components/CartView.vue';
-import api from '@/services/api';
-// const axios = window.axios;
-
-export default {
-  components: {
-    ProductList,
-    CartView,
-  },
-  setup() {
-    const products = ref([]);
-    const cartItems = ref([]);
-    const cartTotal = ref(0);
-    const showCart = ref(false);
-
-    const cartItemCount = computed(() => {
-      return cartItems.value.reduce((total, item) => total + item.quantity, 0);
-    });
-
-    const loadProducts = async () => {
-      try {
-        const response = await axios.get('/api/products');
-        products.value = response.data;
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      }
-    };
-
-    const loadCart = async () => {
-      try {
-        const response = await api.get('/cart');
-        cartItems.value = response.data.items;
-        cartTotal.value = response.data.total;
-      } catch (error) {
-        console.error('Failed to load cart:', error);
-      }
-    };
-
-    const addToCart = async (product, quantity) => {
-      try {
-        const response = await api.post('/cart/add', {
-            product_id: product.id,
-            quantity,
-        });
-
-        cartItems.value = response.data.cart.items;
-        cartTotal.value = response.data.cart.total;
-        alert('Product added to cart!');
-      } catch (error) {
-        console.error('Failed to add to cart:', error);
-        alert('Failed to add product to cart');
-      }
-    };
-
-    const updateCartQuantity = async (cartItemId, quantity) => {
-      try {
-        const response = await axios.put(`/api/cart/items/${cartItemId}`, {
-          quantity: quantity,
-        });
-        cartItems.value = response.data.cart.items;
-        cartTotal.value = response.data.cart.total;
-      } catch (error) {
-        console.error('Failed to update cart:', error);
-      }
-    };
-
-    const removeFromCart = async (cartItemId) => {
-      try {
-        const response = await axios.delete(`/api/cart/items/${cartItemId}`);
-        cartItems.value = response.data.cart.items;
-        cartTotal.value = response.data.cart.total;
-      } catch (error) {
-        console.error('Failed to remove from cart:', error);
-      }
-    };
-
-    const checkout = async () => {
-      try {
-        const response = await axios.post('/api/checkout');
-        alert('Order placed successfully!');
-        cartItems.value = [];
-        cartTotal.value = 0;
-        showCart.value = false;
-      } catch (error) {
-        console.error('Checkout failed:', error);
-        alert('Checkout failed: ' + (error.response?.data?.message || 'Unknown error'));
-      }
-    };
-
-    const logout = async () => {
-      try {
-        // Clear the token
-        localStorage.removeItem('api_token');
-        // Use web logout to destroy session
-        await axios.post('/logout');
-        window.location.href = '/';
-      } catch (error) {
-        console.error('Logout failed:', error);
-      }
-    };
-
-
-    onMounted(() => {
-      // Check if user is authenticated
-      const token = localStorage.getItem('api_token');
-      if (!token) {
-        window.location.href = '/login';
-        return;
-      }
-      loadProducts();
-      loadCart();
-    });
-
-    return {
-      products,
-      cartItems,
-      cartTotal,
-      cartItemCount,
-      showCart,
-      addToCart,
-      updateCartQuantity,
-      removeFromCart,
-      checkout,
-      logout,
-      loadProducts,
-    };
-  },
-};
-</script> -->
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import ProductList from './components/ProductList.vue';
@@ -205,6 +73,7 @@ const products = ref<Product[]>([]);
 const cartItems = ref<CartItem[]>([]);
 const cartTotal = ref<number>(0);
 const showCart = ref<boolean>(false);
+const searchQuery = ref<string>('');
 
 const cartItemCount = computed(() =>
   cartItems.value.reduce((sum, item) => sum + item.quantity, 0)
@@ -212,13 +81,13 @@ const cartItemCount = computed(() =>
 
 // ---------------- API CALLS ----------------
 
-const loadProducts = async () => {
-  const { data } = await api.get('/products');
+const loadProducts = async (search = '') => {
+  const params = search ? { search } : {};
+  const { data } = await api.get('/products', { params });
   products.value = data;
 };
 
 const loadCart = async () => {
-  debugger;
 
   const { data } = await api.get('/cart');
   cartItems.value = data.items;
@@ -259,6 +128,13 @@ const logout = () => {
   localStorage.removeItem('api_token');
   window.location.href = '/login';
 };
+
+const handleSearch = (query: string) => {
+  searchQuery.value = query;
+  loadProducts(query);
+};
+
+
 
 // ---------------- LIFECYCLE ----------------
 
